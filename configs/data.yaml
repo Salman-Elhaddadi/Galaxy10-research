@@ -1,0 +1,12 @@
+image_size: 128
+resize_method: opencv_inter_area
+pixel_dtype: uint8
+scale_range: [0.0, 1.0]
+split_seed: 42
+split_fractions:
+  train: 0.8
+  validation: 0.1
+  test: 0.1
+spatial_match_tolerance_arcsec: 3.0
+keep_exact_duplicates_in_same_split: true
+keep_visually_confirmed_spatial_matches_in_same_split: true
