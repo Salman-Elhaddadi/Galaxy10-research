@@ -24,7 +24,7 @@ class GalAxy10(nn.Module):
         super().__init__()
 
         self.features = nn.Sequential(
-            conv_bn(32, 64),
+            conv_bn(3, 64),
             conv_bn(64, 128),
             nn.MaxPool2d(2),
             Residual(128),
