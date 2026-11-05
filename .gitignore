@@ -4,5 +4,8 @@ checkpoints/
 *.pt
 *.pth
 __pycache__/
+*.egg-info/
 .venv/
 .ipynb_checkpoints/
+.pytest_cache/
+.test-deps/

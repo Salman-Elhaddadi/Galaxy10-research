@@ -1,8 +1,66 @@
 {
+  "schema_version": 2,
+  "status": "audited_unfrozen",
   "seed": 42,
-  "tolerance_arcsec": 3.0,
+  "configuration": {
+    "algorithm": "nested StratifiedGroupKFold",
+    "outer_folds": 10,
+    "inner_folds": 9,
+    "selected_fold": 0,
+    "shuffle": true,
+    "tolerance_arcsec": 3.0,
+    "group_id": "minimum index of transitive exact-pixel/sky component",
+    "pixel_scale_stratification": false
+  },
+  "versions": {
+    "numpy": "2.4.6",
+    "sklearn": "1.9.1"
+  },
   "n_images": 17736,
   "excluded_images": 121,
+  "conflicting_duplicate_groups": 60,
+  "conflicting_duplicate_images": 121,
+  "conflicting_images_per_class": [
+    30,
+    14,
+    10,
+    6,
+    1,
+    5,
+    10,
+    33,
+    4,
+    8
+  ],
+  "conflicting_groups_per_class": [
+    30,
+    14,
+    10,
+    6,
+    1,
+    5,
+    10,
+    33,
+    4,
+    8
+  ],
+  "blank_candidates": [
+    11492,
+    12659,
+    15422
+  ],
+  "visually_confirmed_blanks": [
+    11492,
+    12659,
+    15422
+  ],
+  "blank_confirmation_source": "notebooks/01_dataset_exploration.ipynb cell 7d / findings",
+  "sky_pairs": 65,
+  "integrity": {
+    "partition_complete": true,
+    "excluded_in_splits": 0,
+    "groups_crossing_splits": 0
+  },
   "split_sizes": {
     "train": 14091,
     "val": 1762,
@@ -44,6 +102,18 @@
       260,
       142,
       187
+    ],
+    "excluded": [
+      30,
+      14,
+      10,
+      6,
+      1,
+      5,
+      10,
+      33,
+      4,
+      8
     ]
   },
   "group_counts": {
@@ -53,16 +123,62 @@
   },
   "pixel_scale_share": {
     "train": {
-      "0.262": 0.9546,
-      "0.524": 0.0454
+      "0.262": 0.9545809381874956,
+      "0.524": 0.045419061812504435
     },
     "val": {
-      "0.262": 0.9506,
-      "0.524": 0.0494
+      "0.262": 0.9506242905788876,
+      "0.524": 0.04937570942111237
     },
     "test": {
-      "0.262": 0.9591,
-      "0.524": 0.0409
+      "0.262": 0.9591373439273553,
+      "0.524": 0.04086265607264472
     }
+  },
+  "pixel_scale_class_counts_full_dataset": {
+    "0.262": [
+      1047,
+      1750,
+      2571,
+      1997,
+      332,
+      1832,
+      1682,
+      2521,
+      1360,
+      1824
+    ],
+    "0.524": [
+      34,
+      103,
+      74,
+      30,
+      2,
+      211,
+      147,
+      107,
+      63,
+      49
+    ]
+  },
+  "input_sha256": {
+    "raw_hdf5": "19aefc477c41bb7f77ff07599a6b82a038dc042f889a111b0d4d98bb755c1571",
+    "labels": "9825f027ce2d0b94b3fab036c130199dd97dd21fd62a91fde47db8d9d8194b90",
+    "data_config": "69e2e6ba060a23085ce3a9d306fea6e0b6a8dbb4949cd78a707b6b974fd21c05"
+  },
+  "output_sha256": {
+    "train_idx.npy": "c9260ef6d87acfae21d43b86a06ad497076cc86af3ba071863525203587ab7af",
+    "val_idx.npy": "0e11869035fb2ab12330ae9e7f6448b4eaba617bdb22ff251193de7b71027714",
+    "test_idx.npy": "c26926c9551035a6548e1e63d9d02f52f3353327b872976928843bfd46c9e376",
+    "excluded_idx.npy": "c70c06b070211400aeeb75866ad742c3163ff07c1d5991add20ce437d4f31241",
+    "group_ids.npy": "d4acfd3e430ee9abf2621a350b56541a837c7831ae0a2a4b46b0f23dd3573272",
+    "pixel_scale.npy": "0661156684f00f09515cbce9a3329aa67a8cc92a8767cd3c3eced27186ab5f26",
+    "image_digests.csv": "95c8f4e2036e2882f685c5858fc3fc03dbd22c6d00a70618854abcd875cd1bf9"
+  },
+  "split_fingerprints": {
+    "train": "c9260ef6d87acfae21d43b86a06ad497076cc86af3ba071863525203587ab7af",
+    "val": "0e11869035fb2ab12330ae9e7f6448b4eaba617bdb22ff251193de7b71027714",
+    "test": "c26926c9551035a6548e1e63d9d02f52f3353327b872976928843bfd46c9e376",
+    "excluded": "c70c06b070211400aeeb75866ad742c3163ff07c1d5991add20ce437d4f31241"
   }
 }

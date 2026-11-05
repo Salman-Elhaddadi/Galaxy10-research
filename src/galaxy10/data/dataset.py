@@ -10,18 +10,21 @@ PROCESSED = ROOT / "data" / "processed"
 
 
 class Galaxy10Dataset(Dataset):
-    def __init__(self, indices: np.ndarray, transform=None):
-        self.mean, self.std = load_normalization_stats()
+    def __init__(self, indices: np.ndarray, transform=None, *, root=None, degradation=None, degradation_seed=42):
+        processed = Path(root) / "data/processed" if root is not None else PROCESSED
+        self.mean, self.std = load_normalization_stats(processed / "train_normalization.npz")
         self.indices = np.asarray(indices, dtype=np.int64)
         self.transform = transform
+        self.degradation = degradation
+        self.degradation_seed = degradation_seed
 
         self.images = np.load(
-            PROCESSED / "galaxy10_128x128_uint8.npy",
+            processed / "galaxy10_128x128_uint8.npy",
             mmap_mode="r",
             allow_pickle=False,
         )
         self.labels = np.load(
-            PROCESSED / "galaxy10_labels.npy",
+            processed / "galaxy10_labels.npy",
             allow_pickle=False,
         )
 
@@ -47,6 +50,10 @@ class Galaxy10Dataset(Dataset):
         if self.transform is not None:
             image = self.transform(image)
 
-        image = normalize_image(image, self.mean, self.std)
+        if self.degradation is not None:
+            from galaxy10.data.degradations import degrade
+            image = degrade(image, *self.degradation, seed=self.degradation_seed, index=int(index))
+
+        image = normalize_image(image.clamp(0, 1), self.mean, self.std)
         return image, label
 

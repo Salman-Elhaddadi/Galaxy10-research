@@ -6,7 +6,7 @@
 - Date: 2026-11-01
 - Author: Salman El haddadi
 
-This document is written **before any model is trained**. It fixes what will be done and how results will be judged. Anything not fixed here is exploratory and must be labeled as exploratory in the paper. Changes after tagging go in the amendment log (Section 13), never silently.
+The initial draft preceded the reported draft training. It fixes what will be done and how results will be judged; subsequent engineering decisions are logged in Section 13. The reported Model A seed-0 epoch-28 validation macro-F1 0.7767 / accuracy 0.8053 remains preliminary, not a final test result. Anything not fixed here is exploratory and must be labeled as exploratory in the paper. Changes after tagging go in the amendment log, never silently.
 
 ---
 
@@ -73,10 +73,10 @@ Imbalance: 7.9:1 (class 2 vs class 4). Accuracy alone is not a valid metric; mac
 ## 5. Splits
 
 1. Compute image hashes (script, committed digests), build groups with P-DUP and P-POS, apply the exclusions (P-DUP conflicts, P-BLANK).
-2. `StratifiedGroupKFold`, seed 42, stratified by class, grouped by group id: 10 folds, one fold is test; from the remaining data, 9 folds, one fold is validation. Result: about 80/10/10.
+2. `StratifiedGroupKFold`, seed 42, shuffle enabled, stratified by class, grouped by group id: 10 folds, the **first yielded fold** is test; from the remaining data, 9 folds, the **first yielded fold** is validation. Result: about 80/10/10. Group id is the minimum original index in each transitive exact-duplicate/sky-position component. Exclusions are applied before splitting; retained members of a component cannot cross splits.
 3. Committed outputs in `splits/`: `train_idx.npy`, `val_idx.npy`, `test_idx.npy`, `excluded_idx.npy`, `split_report.json` (class counts and pixel-scale share per split, group counts). Indices refer to the full 17,736-image cache; nothing is re-cached.
-4. Tests (`tests/test_splits.py`): partitions are disjoint, no group spans two splits, every non-excluded image appears exactly once.
-5. The splits created before this protocol existed are **discarded**. No model was trained on them.
+4. Tests (`tests/test_research.py`): partitions are disjoint, no group spans two splits, every non-excluded image appears exactly once, and excluded images occur in no split. Commit per-image SHA256 digests, group ids and pixel scales with the report. Raw digests are recomputed independently of notebook caches; previous split artifacts are preserved in content-addressed history before regeneration.
+5. The 2026-11-04 raw audit reproduced all four existing index arrays byte for byte (14,091 / 1,762 / 1,762, 121 exclusions). The existing normalization file did not reproduce training-only statistics and lacked provenance; its preserved SHA256 is `31ac15e742482cfc3764733c7cee41e8cc7cdcf0316119130a18d5026a2794c0`. Corrected normalization SHA256 is `21ccf07cc433c5373f8f961fc88a80e2359c6646792925e3d2c5b74be987aa7b`. Existing results using old/missing normalization provenance are preliminary and cannot be pooled with corrected runs. No historical run/checkpoint is modified.
 6. **Test-set rules:** never used for training, normalization statistics, model selection, hyperparameters, early stopping or choosing degradation levels. Each frozen configuration is evaluated on test once per seed.
 
 ---
@@ -99,7 +99,7 @@ Hand-computed: about 0.39 M parameters and about 0.24 GMACs per forward pass (ve
 
 **Model B (optional, separate experiment)**: a lightweight residual CNN, defined in an amendment **before** it is used, with at most 2x the parameters of Model A. It is only compared to Model A in an architecture comparison, never inside the augmentation experiment (architecture stays fixed there).
 
-The residual network currently in `src/galaxy10/model/CNN.py` (about 7.8 M parameters) is **not** part of v1.
+The current Model B in `src/galaxy10/model/residual.py` has 4,904,618 parameters, versus Model A's 391,466 (cap: 782,932). It is preserved as **exploratory**, excluded from protocol-compliant architecture comparisons. No compliant residual Model B is currently implemented. `src/galaxy10/model/CNN.py` contains the unchanged Model A baseline. See the 2026-11-04 amendment.
 
 ---
 
@@ -107,9 +107,11 @@ The residual network currently in `src/galaxy10/model/CNN.py` (about 7.8 M param
 
 - Loss: cross-entropy, **no class weights or resampling** [D3]. Optimizer Adam, lr 1e-3 constant, weight decay 0, batch size 32, 30 epochs.
 - Model selection: the epoch with the highest macro-F1 on the **clean** validation set, for both A and B [D7].
+- Macro-F1 uses the fixed 10 classes, with undefined class F1 set to zero. Exact ties retain the earliest epoch. No gradient clipping or learning-rate schedule is applied.
 - Geometric augmentation, training only, **identical for A and B** [D4]: random horizontal flip, random vertical flip, rotation by a random multiple of 90 degrees (no interpolation). No test-time augmentation.
 - Seeds 0, 1, 2 for every configuration (initialization, shuffling, augmentation). The split seed (42) is independent.
-- Determinism: seed Python, NumPy and PyTorch, seed the DataLoader generator and workers, record library versions and hardware per run. GPU non-determinism may remain and is reported.
+- Determinism: seed Python, NumPy and PyTorch (CPU and CUDA), seed the DataLoader generator and workers, record library versions and hardware per run. Enable deterministic PyTorch algorithms, disable cuDNN benchmarking and configure deterministic cuBLAS; unsupported operations fail rather than silently use nondeterministic kernels. Reproducibility is scoped to the same software, hardware and worker count; cross-platform equality is not guaranteed.
+- The training entry point feeds only training and clean validation examples to the model. Test evaluation is a separate command after configuration freezing; training does not load test indices or use test examples/metrics for learning or selection. The shared complete cache is byte-hashed for provenance; this includes test-image bytes solely for integrity, without test predictions or test-derived training statistics. It verifies development group/exclusion isolation and normalization provenance. Formal training must record the reviewed frozen manifest via `--protocol-manifest`; default runs stay draft. Model B stays exploratory even with a manifest.
 - Hyperparameters are fixed to the values above for v1. Any tuning is done on validation only, applies identically to A and B, and is logged.
 - Before any real run: initial loss is close to ln(10) = 2.30, and the model can overfit a single batch.
 - Compute: development on CPU, full runs on Kaggle GPU.
@@ -134,8 +136,12 @@ Evaluate trained models on degraded **test** images (validation only for diagnos
 
 Outputs: macro-F1 versus severity per type, per-class F1 heatmaps versus severity.
 
-### Experiment 3: augmentation (Model A vs Model B-aug)
+Implementation convention: `configs/degradations.yaml` is the authoritative frozen level list, including identity levels in each curve, global evaluation seed 42 and Grad-CAM mid-levels (noise 0.05, blur 1, resolution 4, contrast 0.5). Noise seed is derived with SHA256 from `(seed, original index, type, float severity hex)`, independent of Python hash randomization, worker or iteration order. Blur uses a normalized discrete Gaussian and reflect padding. All are display-space perturbations. Intrinsic reference noise is measured on **training images only**, using per-channel `1.4826 * MAD` on an 8px border at 128px; this descriptive reference does not select severity levels.
+
+### Experiment 3: augmentation (Model A-clean vs Model A-aug)
 Same architecture, hyperparameters, seeds and geometric augmentation. The only difference: during training, each image is degraded with probability 0.5 using **one** type chosen uniformly from {Gaussian noise, Gaussian blur}, severity drawn uniformly in [0, max_train], with max_train = 0.10 (noise sigma) and 2.0 (blur sigma_px).
+
+The augmentation condition uses a separate seeded worker RNG stream for its Bernoulli/type/severity/noise draws, preserving the geometric RNG sequence of the clean condition. Every config, checkpoint and summary identifies `condition=clean|aug`; B-aug is rejected.
 
 Results are reported in four separate groups, because gains on seen types are expected by construction:
 1. seen types at seen severities (noise <= 0.10, blur <= 2),
@@ -143,13 +149,17 @@ Results are reported in four separate groups, because gains on seen types are ex
 3. **unseen types** (resolution, contrast),
 4. clean images.
 
-**Success criterion for H3** [D5]: on groups 2 and 3, the mean macro-F1 over non-zero levels of B exceeds A by more than the seed-to-seed std **and** the clean macro-F1 of B is at most 1 percentage point below A.
+**Success criterion for H3** [D5]: on groups 2 and 3, the mean macro-F1 over non-zero levels of A-aug exceeds A-clean by more than the seed-to-seed std **and** the clean macro-F1 of A-aug is at most 1 percentage point below A-clean. These labels refer to training conditions on the same Model A architecture, never the exploratory residual Model B.
 
 ### Experiment 4: calibration
 For every model, type and level: ECE (15 equal-width bins, top-1 confidence), multi-class Brier score, NLL, mean confidence of correct versus incorrect predictions. Reliability diagrams for clean data and the highest level of each type. No post-hoc recalibration in v1 (temperature scaling may come later as an amendment).
 
+ECE bins are left-closed/right-open except the final bin includes confidence 1. Brier is the mean **sum** of ten squared probability errors. NLL is computed from log-softmax; means for empty correct/incorrect subsets are `null`, with valid bootstrap resample counts recorded. Balanced accuracy averages recalls over classes with nonzero support; macro-F1 always averages all ten. Pixel-scale per-class precision/recall/F1 is suppressed (`null`) below support 20, with support retained.
+
 ### Experiment 5: Grad-CAM
 Model A, seed 0 checkpoint, target layer = output of the last conv block (256x16x16), target class = predicted class. Images are selected by seeded random sampling (seed 42) **before looking at any heatmap**: per class, up to 4 correct and 4 misclassified test images, shown clean and at one mid-level of each degradation. Include a sanity check with randomized model weights (Adebayo et al., 2018, verify the reference before citing). Qualitative only; Grad-CAM is not evidence of astrophysical understanding.
+
+Use saved clean evaluation predictions to sample sorted candidate indices within true class and clean correctness, persist `selection.json` before generating heatmaps, hook final block ReLU `features[14]` (before adaptive pooling), and target each view's predicted class. Randomization is a fresh complete Model A initialization including BatchNorm reset, seed 42, evaluation mode; save targets for trained/randomized views. Validation examples are permitted for workflow diagnostics and explicitly labeled validation; final qualitative views require the same frozen-test authorization as evaluation. This implementation does not assert a passed scientific sanity-check interpretation.
 
 ---
 
@@ -160,16 +170,20 @@ Model A, seed 0 checkpoint, target layer = output of the last conv block (256x16
 - A claimed difference must exceed the seed-to-seed std and have a bootstrap CI excluding zero in all 3 seeds. No significance tests on 3 seeds.
 - Comparisons are paired: same test images, same seeds.
 
+Bootstrap uses NumPy `default_rng(42)` and 1,000 uniform samples of size N with replacement over selected images. Save 2.5/97.5 percentiles for scalar and per-class metrics, and paired **clean-minus-degraded** intervals with identical resampling indices for F1 drops. No class-stratified or group bootstrap is substituted. Aggregate saved-best-checkpoint results with arithmetic mean and **sample** std (`ddof=1`); singleton std is `null`. Reject duplicate seeds within a comparison group and label missing seeds. Never pool architecture, condition, source/protocol/data version, settings, split or severity. No hypothesis conclusion is inferred automatically.
+
 ---
 
 ## 10. Reproducibility and integrity rules
 
 1. Every run writes `results/<run_id>/` with the resolved config, seed, git commit hash, metrics and figures, and `checkpoints/<run_id>/` for weights.
+   The trainer reserves fresh directories using model, condition, seed, UTC timestamp and UUID, and never reuses a run directory. It writes `config.json`, per-epoch `metrics.json`, `summary.json`, and `best.pt` (model and optimizer states, selected epoch, validation metrics and config). Configs record dirty Git status, source/protocol/input SHA256 hashes, library versions and hardware. Evaluation, aggregation and Grad-CAM also reserve unique result directories. All current real runs remain draft; Model B additionally carries an explicit exploratory exclusion label.
 2. No result is edited by hand. Figures are generated by scripts from saved metrics.
 3. No fabricated results or citations. No novelty claim without literature support.
 4. Every deviation from this protocol is an amendment (Section 13), dated and justified.
 5. Report negative results.
 6. Distinguish synthetic degradation from real observing conditions in every figure caption and in the paper.
+7. Frozen-test access requires explicit `--frozen-test` and a manifest generated by `scripts/freeze_protocol.py --confirm-frozen` from a reviewed evidence-backed checklist. It binds source, protocol, configuration, cache, normalization and split fingerprints. Missing/open/stale manifests fail before test indices/pixels are loaded. Incompatible checkpoint input provenance cannot be overridden for test. Each checkpoint/freeze reserves a test-access ledger; use the combined clean+degradation suite once per seed. Failed access reservations remain auditable. No real test evaluation is performed while Section 12 is open.
 
 ---
 
@@ -189,24 +203,26 @@ Because noise robustness on Galaxy10 DECaLS is already studied, **H1 is an expec
 
 ## 12. Open items before tagging `protocol-v1`
 
-**Decisions to confirm or change (defaults written above):**
+**Decisions applied on 2026-11-04 (written defaults retained):**
 - D1 exclude conflicting-label exact duplicates
 - D2 merge all pairs within 3 arcsec into one group; D2b keep both pixel scales and report by scale
 - D3 plain cross-entropy without class weights
-- D4 geometric augmentation: flips and 90-degree rotations for both models
+- D4 geometric augmentation: flips and 90-degree rotations for both models (confirmed by the 2026-11-04 workflow request)
 - D5 success criterion thresholds (1 percentage point, seed std)
 - D6 degradation levels for types B, C and D
-- D7 model selection on clean validation macro-F1
+- D7 model selection on clean validation macro-F1 (confirmed by the 2026-11-04 workflow request)
 
-**Checks to complete:**
-- P1 verify how the images were produced (Legacy Surveys documentation): is the stretch known?
-- P2 count images at pixel scale 0.524 per class
-- P3 count conflicting-label duplicate groups and images, per class
-- P4 inspect the 3 near-constant images
-- P5 measure intrinsic noise per channel on the 128x128 cache
-- P6 read the CvT paper's noise section; search for calibration-under-degradation work on galaxy classifiers
-- P7 update `make_splits.py` to implement Section 5, regenerate and commit the splits
-- P8 benchmark one forward/backward pass of Model A on the CPU
+**Checks and actual status (evidence also in `configs/protocol_checklist.json`):**
+- P1 **OPEN**: verify how the images were produced from primary documentation; no Poisson model is enabled.
+- P2 **VERIFIED** from raw metadata/notebook: at scale 0.524 per class `[34,103,74,30,2,211,147,107,63,49]`; see split report.
+- P3 **VERIFIED** from independently recomputed raw SHA256: 60 conflicting groups / 121 images; per-class images `[30,14,10,6,1,5,10,33,4,8]`.
+- P4 **VERIFIED**: saved notebook panel inspected; indices 11492,12659,15422 are featureless repeated frames, already excluded by P-DUP. New unreviewed blank candidates fail preparation.
+- P5 **MEASURED**, training only at 128px: per-channel median border-MAD sigma `[0.05232707,0.04069882,0.04069882]`; full percentiles and added/intrinsic ratios in the preparation audit.
+- P6 **OPEN**: verify/read the literature listed above and calibration-under-degradation work. No new literature finding or verified citation is claimed in this phase.
+- P7 **IMPLEMENTED/REGENERATED/TESTED**: all original index hashes reproduced, group/exclusion invariants pass; outputs prepared in the working tree with history. Review/commit these changes before tagging; no commit or tag is claimed here.
+- P8 **MEASURED**: CPU one-thread, synthetic batch 1, 128px: forward 0.0263 s, backward 0.0435 s (single unwarmed measurement), 391,466 parameters, 240,650,752 Conv/Linear MACs. Not a throughput benchmark or a real-data overfit test.
+
+Evidence: `results/preparation-audit-20261104T121403331729Z-0f858d79184644fbab03d1d6cb8e3e00/audit.json`, `splits/split_report.json`, `results/blank_inspection_from_notebook.png`, and `docs/engineering_validation.md`. The existing real-training single-batch preflight **passed on CPU**: initial loss 2.3018, final loss 0.0372 / batch accuracy 1.0 at step 40. Its first-16 default is all class 0, so this is explicitly a limited memorization check, not a multiclass learning result. Evidence is in `results/single-batch-sanity-20261104T124012471573Z-9b7039568d6a4292a0cd90805bed5eb6/sanity.json`. **P1/P6, review/commit/tag and the deliberate frozen-test decision remain pending.** This protocol stays draft and no real freeze manifest was created in this phase.
 
 ---
 
@@ -215,3 +231,16 @@ Because noise robustness on Galaxy10 DECaLS is already studied, **H1 is an expec
 | Date | Version | Change | Reason |
 |---|---|---|---|
 | 2026-11-01 | protocol-v1 draft | Initial draft | n/a |
+| 2026-11-04 | protocol-v1 draft | Preserve Model A and the existing residual Model B unchanged; identify B as exploratory and exclude it from protocol-compliant comparisons because it exceeds the unchanged 2x cap. Correct the stale CNN.py residual reference. | Retain the baseline and exploratory work without silently substituting an architecture or relaxing the cap. |
+| 2026-11-04 | protocol-v1 draft | Align training to clean validation macro-F1, Adam lr 1e-3 / weight decay 0, seeds 0/1/2, batch size 32, 30 epochs and identical geometric augmentation. Remove the unprescribed gradient-value clipping. Define fixed ten-class macro-F1, zero-division handling and earliest-epoch tie selection. | Correct implementation drift and make selection unambiguous before any formal results. |
+| 2026-11-04 | protocol-v1 draft | Require deterministic algorithms in the trainer, seed loaders/workers, record resolved settings and provenance, reserve unique result/checkpoint directories, and separate training from future test evaluation. | Make runs traceable and repeatable and protect the test-set freeze rule. |
+| 2026-11-04 | protocol-v1 draft | Rename Experiment 3 conditions to Model A-clean and Model A-aug; keep its architecture, degradation policy and success thresholds unchanged. | Remove the ambiguous B-aug label, which could be mistaken for the separate residual architecture. |
+| 2026-11-04 | protocol-v1 draft | Apply D1-D7 defaults, select the first nested SGKF folds (10 then 9, shuffle, seed 42), canonicalize transitive group ids, recompute raw SHA256 digests, preserve old artifacts and validate exclusions/groups before saving. Retain only the three repository-confirmed P-BLANK exclusions. | Make Section 5 deterministic/auditable without notebook dependencies; existing split arrays reproduced byte for byte. |
+| 2026-11-04 | protocol-v1 draft | Recompute training-only normalization with provenance; preserve old file; mark old/missing-provenance runs preliminary. | Existing normalization differs numerically despite unchanged indices; prevent silent comparability claims. |
+| 2026-11-04 | protocol-v1 draft | Freeze the written degradation levels and explicit mid-levels in YAML, deterministic SHA256-derived per-image seeds, pre-normalization clipping; measure intrinsic noise on training images with an 8px border at 128px. | Implement display-space experiments without consulting test performance or changing severity defaults. |
+| 2026-11-04 | protocol-v1 draft | Implement separate strict-best-checkpoint evaluation with explicit split selection, evidence-backed freeze manifest and test flag, unique outputs and test-access ledger. Require matching checkpoint data provenance; validation override stays preliminary. | Prevent accidental test development, repeated passes and promotion of incompatible/draft checkpoints to formal results. |
+| 2026-11-04 | protocol-v1 draft | Define fixed metrics/calibration bin conventions, 1,000 seed-42 image bootstrap, paired clean-minus-degraded drop intervals, support threshold 20 for per-class pixel-scale results, and sample std across separated seed groups. | Resolve metric/statistical implementation ambiguity without changing primary hypotheses. |
+| 2026-11-04 | protocol-v1 draft | Implement Model A-aug exactly as written with separate augmentation RNG and explicit condition metadata; reject B-aug. | Preserve architecture/settings/geometric draws while changing only the prescribed training degradation. |
+| 2026-11-04 | protocol-v1 draft | Preselect Grad-CAM examples from saved predictions; persist selection before maps; target final block ReLU and each view's prediction; fully reinitialize weights/BN at seed 42 for sanity views. | Make selection and randomization auditable; validation smoke maps are diagnostic, with no scientific interpretation claimed. |
+| 2026-11-04 | protocol-v1 draft | Add six-run A matrix, separately labelled exploratory B commands, best-checkpoint aggregation, fingerprint-checked Kaggle preparation and synthetic CPU workflow checks. Leave P1/P6, GPU runs and deliberate freeze pending. | Complete implementable engineering without inventing literature findings, scientific performance or completed external checks. |
+| 2026-11-04 | protocol-v1 draft | Preserve the existing first-16 single-batch preflight default and early-stop criterion, save unique machine-readable evidence, and fail the command if overfitting is not achieved. Record the passed CPU check and its all-class-0 selection limitation. Keep paired-bootstrap NLL in log space even when probabilities underflow. | Prevent silent preflight success and inaccurate confidence intervals without changing research training settings or inventing a multiclass sanity result. |

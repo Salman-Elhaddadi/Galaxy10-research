@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "galaxy10-research"
+version = "0.1.0"
+description = "Galaxy morphology classification under image-quality degradation"
+requires-python = ">=3.9"
+dependencies = ["numpy", "torch"]
+
+[project.optional-dependencies]
+data = ["h5py", "opencv-python", "scipy", "scikit-learn"]
+research = ["h5py", "opencv-python", "scipy", "scikit-learn", "PyYAML", "matplotlib"]
+test = ["pytest>=7"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.scripts]
+galaxy10-train = "galaxy10.model.train:main"
+galaxy10-evaluate = "galaxy10.evaluate:main"
+galaxy10-aggregate = "galaxy10.aggregate:main"
+galaxy10-gradcam = "galaxy10.gradcam:main"

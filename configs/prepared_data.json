@@ -1,0 +1,18 @@
+{
+  "status": "audited_unfrozen",
+  "description": "Expected corrected preparation; previous normalization is preliminary and preserved in data/processed/history.",
+  "file_sha256": {
+    "data/raw/Galaxy10_DECals.h5": "19aefc477c41bb7f77ff07599a6b82a038dc042f889a111b0d4d98bb755c1571",
+    "data/processed/galaxy10_128x128_uint8.npy": "4be372d0e38bc0d8b83259ee8ead276e82739ffc67fc0e7ba12607357d99c538",
+    "data/processed/galaxy10_labels.npy": "9825f027ce2d0b94b3fab036c130199dd97dd21fd62a91fde47db8d9d8194b90",
+    "data/processed/train_normalization.npz": "21ccf07cc433c5373f8f961fc88a80e2359c6646792925e3d2c5b74be987aa7b"
+  },
+  "normalization_mean": [0.16797001525708335, 0.16308653181639068, 0.1593786256354014],
+  "normalization_std": [0.12222169159330588, 0.11270209950648834, 0.10501927266846377],
+  "previous_normalization_sha256": "31ac15e742482cfc3764733c7cee41e8cc7cdcf0316119130a18d5026a2794c0",
+  "intrinsic_noise_reference": {
+    "scope": "current training images only; 8px border at 128px; RGB [0,1]",
+    "method": "per-channel 1.4826 * MAD; median across images",
+    "median_sigma_rgb": [0.05232706665992737, 0.0406988188624382, 0.0406988188624382]
+  }
+}

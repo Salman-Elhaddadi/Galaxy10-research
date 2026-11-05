@@ -1,0 +1,13 @@
+# Display-space perturbations on float32 RGB [0,1], before normalization.
+version: 1
+seed: 42
+levels:
+  gaussian_noise: [0, 0.02, 0.05, 0.10, 0.15]
+  gaussian_blur: [0, 0.5, 1, 2, 3]
+  resolution: [1, 2, 4, 8]
+  contrast: [1.0, 0.75, 0.5, 0.25, 0.1]
+gradcam_mid:
+  gaussian_noise: 0.05
+  gaussian_blur: 1
+  resolution: 4
+  contrast: 0.5

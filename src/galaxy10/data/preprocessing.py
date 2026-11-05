@@ -8,14 +8,15 @@ ROOT = Path(__file__).resolve().parents[3]
 STATS_PATH = ROOT / "data" / "processed" / "train_normalization.npz"
 
 
-def load_normalization_stats() -> tuple[torch.Tensor, torch.Tensor]:
-    if not STATS_PATH.exists():
+def load_normalization_stats(path=None) -> tuple[torch.Tensor, torch.Tensor]:
+    path = Path(path) if path else STATS_PATH
+    if not path.exists():
         raise FileNotFoundError(
             f"Normalization statistics not found: {STATS_PATH}. "
             "Run the normalization-statistics script first."
         )
 
-    with np.load(STATS_PATH, allow_pickle=False) as stats:
+    with np.load(path, allow_pickle=False) as stats:
         mean = stats["mean"]
         std = stats["std"]
 
