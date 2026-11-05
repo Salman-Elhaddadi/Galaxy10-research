@@ -56,7 +56,12 @@ def prepare(root):
         np.save(folder / f"{name}_idx.npy", values)
     np.save(folder / "group_ids.npy", groups)
     np.save(folder / "pixel_scale.npy", scale)
-    (folder / "image_digests.csv").write_text("index,sha256,group_id\n" + "".join(f"{i},{digest},{groups[i]}\n" for i, digest in enumerate(digests)), encoding="utf-8")
+    digest_csv = "index,sha256,group_id\n" + "".join(
+        f"{i},{digest},{groups[i]}\n" for i, digest in enumerate(digests)
+    )
+    # Keep the committed provenance table byte-stable across Windows and Linux.
+    with (folder / "image_digests.csv").open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write(digest_csv)
     new = {name: sha256(folder / f"{name}_idx.npy") for name in (*splits, "excluded")}
     levels = np.unique(scale[np.isfinite(scale)])
     report = {

@@ -173,7 +173,7 @@
     "excluded_idx.npy": "c70c06b070211400aeeb75866ad742c3163ff07c1d5991add20ce437d4f31241",
     "group_ids.npy": "d4acfd3e430ee9abf2621a350b56541a837c7831ae0a2a4b46b0f23dd3573272",
     "pixel_scale.npy": "0661156684f00f09515cbce9a3329aa67a8cc92a8767cd3c3eced27186ab5f26",
-    "image_digests.csv": "95c8f4e2036e2882f685c5858fc3fc03dbd22c6d00a70618854abcd875cd1bf9"
+    "image_digests.csv": "2e57fc09a66eb2644d16e973279d460b95cf09e766d413e4aacd4a73e350e556"
   },
   "split_fingerprints": {
     "train": "c9260ef6d87acfae21d43b86a06ad497076cc86af3ba071863525203587ab7af",

@@ -1,4 +1,5 @@
 """Research invariants and end-to-end workflows on synthetic CPU data only."""
+import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -88,7 +89,13 @@ def test_committed_split_isolation_and_fingerprints():
     splits = {k: np.load(folder / f"{k}_idx.npy", allow_pickle=False) for k in ("train", "val", "test")}
     validate_splits(splits, np.load(folder / "excluded_idx.npy"), np.load(folder / "group_ids.npy"), report["n_images"])
     for name, digest in report["output_sha256"].items():
-        assert sha256(folder / name) == digest
+        path = folder / name
+        if path.suffix == ".csv":
+            canonical = path.read_bytes().replace(b"\r\n", b"\n")
+            actual = hashlib.sha256(canonical).hexdigest()
+        else:
+            actual = sha256(path)
+        assert actual == digest
 
 
 @pytest.mark.parametrize("kind,level", [("gaussian_noise", .1), ("gaussian_blur", 2), ("resolution", 4), ("contrast", .25)])
