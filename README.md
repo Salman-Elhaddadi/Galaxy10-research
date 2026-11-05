@@ -102,7 +102,7 @@ Calibration: 15 equal-width top-confidence ECE bins (confidence 1 belongs to the
 
 ## Deliberate protocol freeze and test access
 
-`configs/protocol_checklist.json` records completed checks and unresolved evidence. **P1 (image production/stretch), P6 (literature) and the deliberate test decision remain open.** Read primary sources, document evidence, review/update/commit/tag the protocol and supply a truthful completed checklist before freezing. Do not simply turn pending checks true. The recorded CPU preflight passed its existing criterion; its single-class batch limitation remains explicit.
+`configs/protocol_checklist.json` records completed checks and unresolved evidence. **P1 (image production/stretch) and P6 (literature) were closed by the evidence review in `docs/literature.md`; the deliberate protocol-freeze/test decision remains open.** P1 establishes that the released pixels are rendered Legacy Survey viewer JPEG cutouts and does not justify a physical Poisson model. The recorded CPU preflight passed its existing criterion; its single-class batch limitation remains explicit.
 
 After those decisions, the commands are:
 
@@ -121,7 +121,7 @@ EVAL=results/ACTUAL_VALIDATION_EVALUATION_DIRECTORY
 python experiments/gradcam.py --evaluation-dir "$EVAL" --device cuda
 ```
 
-For frozen-test Grad-CAM, supply the frozen-test evaluation directory plus `--frozen-test --freeze-manifest configs/frozen_protocol.json`. Only Model A training seed 0 is accepted. Selection is seed 42, per true class up to four correct and four incorrect clean examples, saved to `selection.json` **before heatmap generation**. The target is the final block ReLU output (`features[14]`, 256x16x16); the target class is each view's prediction. Clean and configured mid-level noise `.05`, blur `1`, resolution `4`, contrast `.5` are shown with trained and fully randomized weights (seed 42, fresh initialization/BN). Outputs include selected indices/settings, per-view predicted targets, numeric heatmaps and figures. This is a qualitative sanity workflow; literature verification and interpretation remain outstanding.
+For frozen-test Grad-CAM, supply the frozen-test evaluation directory plus `--frozen-test --freeze-manifest configs/frozen_protocol.json`. Only Model A training seed 0 is accepted. Selection is seed 42, per true class up to four correct and four incorrect clean examples, saved to `selection.json` **before heatmap generation**. The target is the final block ReLU output (`features[14]`, 256x16x16); the target class is each view's prediction. Clean and configured mid-level noise `.05`, blur `1`, resolution `4`, contrast `.5` are shown with trained and fully randomized weights (seed 42, fresh initialization/BN). Outputs include selected indices/settings, per-view predicted targets, numeric heatmaps and figures. This is a qualitative sanity workflow; `docs/literature.md` supports the randomized-weight check but scientific interpretation remains outstanding.
 
 Explicitly supply each completed run's best checkpoint (paths below are placeholders):
 
@@ -145,4 +145,4 @@ python experiments/aggregate.py --help
 
 Tests use synthetic CPU fixtures for split/exclusion/group isolation, byte-reproducible reports, deterministic perturbations, targeted policy/RNG isolation, hand-calculated metrics, reproducible bootstrap, freeze protection, strict checkpoints, one tiny augmented Model A epoch, all 20 evaluation views, output schemas/figures, randomized Grad-CAM, aggregation and entry points. They do not establish scientific performance. The [engineering validation record](docs/engineering_validation.md) records actual outcomes and limitations.
 
-Remaining: external primary-source and literature checks; GPU seed matrix and validation diagnostics; deliberate protocol/split freeze; then one frozen test suite per eligible seed and qualitative interpretation. No literature findings, new full-run model performance or real test scores are claimed.
+Remaining: GPU preflight, seed matrix and validation diagnostics; deliberate protocol/split freeze; then one frozen test suite per eligible seed and qualitative interpretation. P1/P6 evidence is documented in `docs/literature.md`; no new full-run model performance or real test scores are claimed.

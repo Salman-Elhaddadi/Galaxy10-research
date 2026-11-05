@@ -57,7 +57,7 @@ Imbalance: 7.9:1 (class 2 vs class 4). Accuracy alone is not a valid metric; mac
 | 5 | **Pixel scale**: two values, 0.262 and 0.524 arcsec/pixel, present in every class. Images at 0.524: 820 (4.6%). | **P-PX** [D2b]: keep all images; do not stratify on it; report every metric overall **and** by pixel scale; log the share per split in `split_report.json`; per-class results by scale only where n >= 20. |
 | 6 | **Redshift**: 92 NaN, 3 values <= 0. | Not used as input, filter or stratification key. No action. |
 | 7 | **Intrinsic noise**: border-MAD median 10.87/255 (about 0.043 on the [0,1] scale), 1st-99th percentile 5.9-16.3/255. Measured on the grayscale mean at 256x256. | **P-NOISE**: degradation severity is reported as added sigma **and** as a ratio to intrinsic sigma, re-measured per channel on the 128x128 cache (check P5). |
-| 8 | **Sky level**: median 33/255 (1st-99th percentile 31-38). Suggests display-stretched composites. Not verified (check P1). | Until verified, every degradation is described as a **display-space perturbation**, not a physical noise model. |
+| 8 | **Sky level**: median 33/255 (1st-99th percentile 31-38). The official builder downloaded DR8 viewer JPEG cutouts (`bands=grz`); exact viewer stretch parameters are not preserved (P1; `docs/literature.md`). | Every degradation is a **display-space perturbation**, not a physical noise model. Poisson noise is not enabled. |
 
 ---
 
@@ -191,13 +191,9 @@ Bootstrap uses NumPy `default_rng(42)` and 1,000 uniform samples of size N with 
 
 Known limitations: label noise (conflicting duplicates; volunteer-vote labels), mixed pixel scales, saturated images, resized and probably display-stretched composites, synthetic degradations, a single dataset, class imbalance, and a small test set (about 1.7k images, so wide per-class CIs, especially class 4).
 
-Literature (status, to be completed in `docs/literature.md`):
-- Pandya et al., 2023, arXiv:2311.01500: robustness of equivariant networks on Galaxy10 DECaLS with Poisson noise and one-pixel attacks (read).
-- A&A 683, A42 (2024), CvT galaxy morphology classification with Gaussian and salt-and-pepper noise: **noise section not yet read**; verify before citing.
-- Ciprijanovic et al., arXiv:2112.14299 (DeepAdversaries): perturbations and domain adaptation for galaxy morphology; verify before citing.
-- DeepAstroUDA, arXiv:2302.02005 (listed in the astroNN docs).
+The scoped primary-source review is recorded in `docs/literature.md`. Direct prior art includes Pandya et al. (2023) on Galaxy10 DECaLS under Poisson noise and one-pixel attacks, Cao et al. (2024) on galaxy classification under Gaussian and salt-and-pepper noise, and Ćiprijanović et al. (2022) on simulated-galaxy perturbations and domain adaptation. Hendrycks and Dietterich (2019), Guo et al. (2017), Ovadia et al. (2019), and Adebayo et al. (2018) establish the common-corruption, calibration-under-shift, and saliency-sanity context used by this protocol.
 
-Because noise robustness on Galaxy10 DECaLS is already studied, **H1 is an expected result, not a contribution**. A possible contribution is a reproducible study combining several degradation types, calibration under degradation, per-class sensitivity and targeted augmentation with lightweight CNNs. **No novelty claim is made** until a systematic literature search (check P6) supports it.
+Because noise robustness on Galaxy10 DECaLS is already studied, **H1 is an expected result, not a contribution**. The defensible contribution, conditional on results, is the combined reproducible treatment of four display-space degradation types, calibration, per-class and pixel-scale sensitivity, paired uncertainty, controlled augmentation, and randomized-weight qualitative checks in a lightweight model. No generic novelty claim is made for noise robustness.
 
 ---
 
@@ -213,16 +209,16 @@ Because noise robustness on Galaxy10 DECaLS is already studied, **H1 is an expec
 - D7 model selection on clean validation macro-F1 (confirmed by the 2026-11-04 workflow request)
 
 **Checks and actual status (evidence also in `configs/protocol_checklist.json`):**
-- P1 **OPEN**: verify how the images were produced from primary documentation; no Poisson model is enabled.
+- P1 **VERIFIED WITH LIMITATION**: the official Galaxy10 builder downloads Legacy Survey DR8 viewer JPEG cutouts with `bands=grz`; these are rendered RGB products, not linear photon counts. Exact viewer stretch parameters are not preserved, so no physical Poisson model is enabled. See `docs/literature.md`.
 - P2 **VERIFIED** from raw metadata/notebook: at scale 0.524 per class `[34,103,74,30,2,211,147,107,63,49]`; see split report.
 - P3 **VERIFIED** from independently recomputed raw SHA256: 60 conflicting groups / 121 images; per-class images `[30,14,10,6,1,5,10,33,4,8]`.
 - P4 **VERIFIED**: saved notebook panel inspected; indices 11492,12659,15422 are featureless repeated frames, already excluded by P-DUP. New unreviewed blank candidates fail preparation.
 - P5 **MEASURED**, training only at 128px: per-channel median border-MAD sigma `[0.05232707,0.04069882,0.04069882]`; full percentiles and added/intrinsic ratios in the preparation audit.
-- P6 **OPEN**: verify/read the literature listed above and calibration-under-degradation work. No new literature finding or verified citation is claimed in this phase.
-- P7 **IMPLEMENTED/REGENERATED/TESTED**: all original index hashes reproduced, group/exclusion invariants pass; outputs prepared in the working tree with history. Review/commit these changes before tagging; no commit or tag is claimed here.
+- P6 **VERIFIED FOR PROTOCOL-V1 SCOPE**: direct Galaxy10 and galaxy-robustness work, common-corruption evaluation, calibration under shift, and saliency sanity checks are reviewed and positioned in `docs/literature.md`. Noise robustness itself is explicitly not claimed as novel.
+- P7 **IMPLEMENTED/REGENERATED/TESTED**: all original index hashes reproduced, group/exclusion invariants pass; split and provenance outputs, including history, are committed. Protocol review and tagging still remain before freezing.
 - P8 **MEASURED**: CPU one-thread, synthetic batch 1, 128px: forward 0.0263 s, backward 0.0435 s (single unwarmed measurement), 391,466 parameters, 240,650,752 Conv/Linear MACs. Not a throughput benchmark or a real-data overfit test.
 
-Evidence: `results/preparation-audit-20261104T121403331729Z-0f858d79184644fbab03d1d6cb8e3e00/audit.json`, `splits/split_report.json`, `results/blank_inspection_from_notebook.png`, and `docs/engineering_validation.md`. The existing real-training single-batch preflight **passed on CPU**: initial loss 2.3018, final loss 0.0372 / batch accuracy 1.0 at step 40. Its first-16 default is all class 0, so this is explicitly a limited memorization check, not a multiclass learning result. Evidence is in `results/single-batch-sanity-20261104T124012471573Z-9b7039568d6a4292a0cd90805bed5eb6/sanity.json`. **P1/P6, review/commit/tag and the deliberate frozen-test decision remain pending.** This protocol stays draft and no real freeze manifest was created in this phase.
+Evidence: `results/preparation-audit-20261104T121403331729Z-0f858d79184644fbab03d1d6cb8e3e00/audit.json`, `splits/split_report.json`, `results/blank_inspection_from_notebook.png`, `docs/engineering_validation.md`, and `docs/literature.md`. The existing real-training single-batch preflight **passed on CPU**: initial loss 2.3018, final loss 0.0372 / batch accuracy 1.0 at step 40. Its first-16 default is all class 0, so this is explicitly a limited memorization check, not a multiclass learning result. Evidence is in `results/single-batch-sanity-20261104T124012471573Z-9b7039568d6a4292a0cd90805bed5eb6/sanity.json`. **GPU validation, review/commit/tag, and the deliberate frozen-test decision remain pending.** This protocol stays draft and no real freeze manifest was created in this phase.
 
 ---
 
@@ -244,3 +240,4 @@ Evidence: `results/preparation-audit-20261104T121403331729Z-0f858d79184644fbab03
 | 2026-11-04 | protocol-v1 draft | Preselect Grad-CAM examples from saved predictions; persist selection before maps; target final block ReLU and each view's prediction; fully reinitialize weights/BN at seed 42 for sanity views. | Make selection and randomization auditable; validation smoke maps are diagnostic, with no scientific interpretation claimed. |
 | 2026-11-04 | protocol-v1 draft | Add six-run A matrix, separately labelled exploratory B commands, best-checkpoint aggregation, fingerprint-checked Kaggle preparation and synthetic CPU workflow checks. Leave P1/P6, GPU runs and deliberate freeze pending. | Complete implementable engineering without inventing literature findings, scientific performance or completed external checks. |
 | 2026-11-04 | protocol-v1 draft | Preserve the existing first-16 single-batch preflight default and early-stop criterion, save unique machine-readable evidence, and fail the command if overfitting is not achieved. Record the passed CPU check and its all-class-0 selection limitation. Keep paired-bootstrap NLL in log space even when probabilities underflow. | Prevent silent preflight success and inaccurate confidence intervals without changing research training settings or inventing a multiclass sanity result. |
+| 2026-11-05 | protocol-v1 draft | Close P1 with evidence that Galaxy10 uses rendered Legacy Survey DR8 `grz` viewer JPEG cutouts; retain display-space language and reject a physical Poisson interpretation. Close P6 for the scoped v1 review and record direct prior art, calibration-under-shift context, saliency sanity checks, and a narrowed contribution boundary in `docs/literature.md`. | Resolve the two external evidence checks without overstating pixel physics or novelty. |

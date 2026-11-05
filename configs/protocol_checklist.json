@@ -1,17 +1,17 @@
 {
   "status": "draft",
   "checks": {
-    "P1": false, "P2": true, "P3": true, "P4": true,
-    "P5": true, "P6": false, "P7": true, "P8": true,
+    "P1": true, "P2": true, "P3": true, "P4": true,
+    "P5": true, "P6": true, "P7": true, "P8": true,
     "single_batch_sanity": true, "deliberate_test_decision": false
   },
   "evidence": {
-    "P1": "PENDING: verify image production/stretch from primary documentation",
+    "P1": "docs/literature.md P1 review; official Galaxy10 repository and DR8 downloader show Legacy Survey viewer JPEG cutouts with layer=dr8, bands=grz; rendered 8-bit RGB, exact viewer stretch parameters not preserved, so no physical Poisson model",
     "P2": "splits/split_report.json pixel_scale_class_counts_full_dataset",
     "P3": "splits/split_report.json conflicting duplicate groups and class counts",
     "P4": "notebooks/01_dataset_exploration.ipynb; results/blank_inspection_from_notebook.png visually inspected 2026-11-04",
     "P5": "results/preparation-audit-20261104T121403331729Z-0f858d79184644fbab03d1d6cb8e3e00/audit.json; training-only 128px border MAD",
-    "P6": "PENDING: read/verify literature and calibration-under-degradation review",
+    "P6": "docs/literature.md; reviewed direct Galaxy10/generic galaxy robustness, common-corruption, calibration-under-shift, and saliency-sanity primary papers; novelty boundary recorded",
     "P7": "splits/split_report.json; tests/test_research.py; byte-identical original split indices",
     "P8": "results/preparation-audit-20261104T121403331729Z-0f858d79184644fbab03d1d6cb8e3e00/audit.json; synthetic batch-one CPU forward/backward",
     "single_batch_sanity": "results/single-batch-sanity-20261104T124012471573Z-9b7039568d6a4292a0cd90805bed5eb6/sanity.json; CPU, existing first-16 default (all class 0), initial loss 2.3018, overfit criterion passed at step 40; limited preflight only",
