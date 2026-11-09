@@ -25,7 +25,6 @@ class ResidualBlock(nn.Module):
 
 
 class ModelB(nn.Module):
-    """Exploratory residual architecture; exceeds the protocol-v1 parameter cap."""
 
     def __init__(self):
         super().__init__()

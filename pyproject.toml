@@ -10,6 +10,7 @@ requires-python = ">=3.9"
 dependencies = ["numpy", "torch"]
 
 [project.optional-dependencies]
+app = ["streamlit>=1.57,<2", "Pillow>=9.2", "opencv-python"]
 data = ["h5py", "opencv-python", "scipy", "scikit-learn"]
 research = ["h5py", "opencv-python", "scipy", "scikit-learn", "PyYAML", "matplotlib"]
 test = ["pytest>=7"]

@@ -1,5 +1,7 @@
 # Research engineering validation — 2026-11-04
 
+This is a historical 2026-11-04 engineering record. For the later saved-artifact validation results and current study status, see `docs/exploratory_validation_results.md` and the README.
+
 This records work actually performed on the dirty working tree. No commit/tag, new full research training result, frozen real test result, literature finding or scientific interpretation is claimed. The reported Model A seed-0 epoch-28 validation scores (macro-F1 0.7767, accuracy 0.8053) were supplied by the user and were not reproduced here.
 
 ## Inspection and preservation
@@ -71,4 +73,4 @@ Observed environment: CPython 3.13.14, PyTorch 2.14.1+cpu, NumPy 2.4.6, SciPy 1.
 
 ## Still outstanding
 
-P1 image-production/stretch verification and P6 primary-literature review; GPU training for the six Model A condition/seed combinations (optional Model B remains exploratory), with repeated environment preflight; real-checkpoint validation/degradation/Grad-CAM diagnostics; review/commit/tag of the draft protocol; an explicit evidence-backed frozen-test decision; then the frozen clean/degradation suite per eligible seed and qualitative interpretation. The implementation was exercised on synthetic data, real preparation metadata/development batches and the limited single-class real-data preflight. It does not establish robustness, calibration improvements, astrophysical explanation quality or formal scientific results.
+P1 image-production/stretch verification and P6 primary-literature review; checkpoint/provenance inspection for the three user-reported Model A-clean seed runs recorded in `docs/reported_training_results.md`; GPU training for the three Model A-aug seeds (optional Model B remains exploratory); real-checkpoint validation/degradation/Grad-CAM diagnostics; review/commit/tag of the draft protocol; an explicit evidence-backed frozen-test decision; then the frozen clean/degradation suite per eligible seed and qualitative interpretation. The implementation was exercised on synthetic data, real preparation metadata/development batches and the limited single-class real-data preflight. The user-reported clean-validation logs do not establish robustness, calibration improvements, astrophysical explanation quality or formal scientific results.

@@ -1,5 +1,7 @@
 # Research Protocol
 
+Status update 2026-11-09: matched clean and augmented Model A seed-0 draft checkpoints and 20-condition validation evaluations are now saved and verified; see `docs/exploratory_validation_results.md`. This does not freeze or amend the protocol. Missing seeds, deliberate freeze and formal test access remain open.
+
 **Galaxy morphology classification: robustness, reliability and explainability of lightweight CNNs under image-quality degradation**
 
 - Version: `protocol-v1` (**DRAFT** until every item in Section 12 is closed, then tag it in git)
