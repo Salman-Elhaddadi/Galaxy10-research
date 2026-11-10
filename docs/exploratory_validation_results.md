@@ -1,4 +1,10 @@
-# Exploratory validation results — updated 2026-11-09
+# Exploratory validation results — updated 2026-11-10
+
+## Matched CPU evaluation for the research note (2026-11-10)
+
+Both saved seed-0 checkpoints were evaluated on the same Windows CPU with eight threads, the same software and data fingerprints, and the same 20 validation configurations. The evaluator reported no checkpoint compatibility mismatches. The clean run is `evaluation-val-20261110T201448193180Z-eeb99268c65946b0a9a6b01245855623` and the augmented run is `evaluation-val-20261110T202048379253Z-43ae9479e65d41d888f497ef844b8ab4`. Each run covers the same 1,762 validation images. The checkpoint hashes match the complete archives below.
+
+Macro-F1 for clean-trained and augmented checkpoints was 0.7665 and 0.7400 on unmodified images, 0.2909 and 0.6824 at noise standard deviation 0.10, 0.5890 and 0.6906 at blur standard deviation 2 pixels, and 0.5957 and 0.6813 at fourfold downsampling. The [research note](paper/galaxy10-research-note.md) and [figure data](paper/galaxy10-validation-figure-data.csv) use this matched evaluation. Both runs reused the archived weights from the same training seed. The held-out test set was not evaluated.
 
 ## Verified saved-artifact update (2026-11-09)
 
